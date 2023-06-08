@@ -78,6 +78,19 @@ async function run() {
       next();
     };
 
+    // varify instructor ***
+    const verifyInstructor = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      if (user?.role !== "instructor") {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
+      next();
+    };
+
     // user related api
 
     app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
@@ -104,10 +117,25 @@ async function run() {
       if (req.decoded.email !== email) {
         res.send({ admin: false });
       }
-
       const query = { email: email };
       const user = await userCollection.findOne(query);
       const result = { admin: user?.role === "admin" };
+      res.send(result);
+    });
+
+
+    // cheaking instructor or not ***
+
+    app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+
+      if (req.decoded.email !== email) {
+        res.send({ instructor: false });
+      }
+
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const result = { instructor: user?.role === "instructor" };
       res.send(result);
     });
 
