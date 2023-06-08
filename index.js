@@ -51,11 +51,19 @@ async function run() {
 
     // class related api
     app.get("/class", async (req, res) => {
-      const result = classCollection.find().toArray();
+      const result = await classCollection.find().toArray();
       res.send(result);
     });
 
-    app.post("/class", verifyJWT, verifyInstructor, async (req, res) => {
+    app.get("/class/:email", async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
+      const filter = { instructor_email: email };
+      const result = await classCollection.find(filter).toArray();
+      res.send(result);
+    });
+
+    app.post("/class", verifyJWT, async (req, res) => {
       const newClass = req.body;
       const result = await classCollection.insertOne(newClass);
       res.send(result);
@@ -100,6 +108,12 @@ async function run() {
 
     app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/users/instructor", async (req, res) => {
+      const filter = { role: "instructor" };
+      const result = await userCollection.find(filter).toArray();
       res.send(result);
     });
 
