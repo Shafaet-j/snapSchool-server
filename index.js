@@ -47,6 +47,14 @@ async function run() {
     await client.connect();
 
     const userCollection = client.db("snapschool").collection("user");
+    const classCollection = client.db("snapschool").collection("classes");
+
+    // class related api
+    app.post("/class", async (req, res) => {
+      const newClass = req.body;
+      const result = await classCollection.insertOne(newClass);
+      res.send(result);
+    });
 
     // JWT RELATED APIS
     app.post("/jwt", (req, res) => {
@@ -72,7 +80,7 @@ async function run() {
 
     // user related api
 
-    app.get("/users", verifyJWT, async (req, res) => {
+    app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
     });
