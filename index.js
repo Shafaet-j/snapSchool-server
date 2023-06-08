@@ -25,7 +25,7 @@ const verifyJWT = (req, res, next) => {
         .send({ error: true, message: "unauthorization access" });
     }
     req.decoded = decoded;
-    next()
+    next();
   });
 };
 
@@ -72,6 +72,19 @@ async function run() {
         return res.send({ message: "user already existed" });
       }
       const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
+
+    app.get("/users/admin/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+
+      if (req.decoded.email !== email) {
+        res.send({ admin: false });
+      }
+
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const result = { admin: user?.role === "admin" };
       res.send(result);
     });
 
