@@ -50,7 +50,12 @@ async function run() {
     const classCollection = client.db("snapschool").collection("classes");
 
     // class related api
-    app.post("/class", async (req, res) => {
+    app.get("/class", async (req, res) => {
+      const result = classCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/class", verifyJWT, verifyInstructor, async (req, res) => {
       const newClass = req.body;
       const result = await classCollection.insertOne(newClass);
       res.send(result);
@@ -122,7 +127,6 @@ async function run() {
       const result = { admin: user?.role === "admin" };
       res.send(result);
     });
-
 
     // cheaking instructor or not ***
 
