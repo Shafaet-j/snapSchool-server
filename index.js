@@ -48,6 +48,15 @@ async function run() {
 
     const userCollection = client.db("snapschool").collection("user");
     const classCollection = client.db("snapschool").collection("classes");
+    const enrollCollection = client.db("snapschool").collection("enrolls");
+
+    // enroll related api
+
+    app.post("/enroll", async (req, res) => {
+      const item = req.body;
+      const result = await enrollCollection.insertOne(item);
+      res.send(result);
+    });
 
     // class related api
     app.get("/class", async (req, res) => {
