@@ -50,6 +50,21 @@ async function run() {
     const userCollection = client.db("snapschool").collection("user");
     const classCollection = client.db("snapschool").collection("classes");
     const enrollCollection = client.db("snapschool").collection("enrolls");
+    const paymentCollection = client.db("snapschool").collection("payments");
+
+    // payment related apis
+    app.post("/payments", async (req, res) => {
+      const payment = req.body;
+      const result = await paymentCollection.insertOne(payment);
+      res.send(result);
+    });
+
+    app.get("/payments/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const result = await paymentCollection.find(filter);
+      res.send(result);
+    });
 
     // enroll related api
 
@@ -59,13 +74,23 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/enroll", async (req, res) => {
-      const result = await enrollCollection.find().toArray();
+    app.get("/enroll/:email", async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
+      const query = { email: email };
+      const result = await enrollCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.delete("/enroll/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await enrollCollection.deleteOne(filter);
       res.send(result);
     });
 
     // payment intent
-    app.post("/create-payment-intent", async (req, res) => {
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
       const { price } = req.body;
       const amount = price * 100;
       const paymentIntent = await stripe.paymentIntents.create({
@@ -74,8 +99,8 @@ async function run() {
         payment_method_types: ["card"],
       });
       res.send({
-        clientSecret: paymentIntent.client_secret
-      })
+        clientSecret: paymentIntent.client_secret,
+      });
     });
 
     // class related api
