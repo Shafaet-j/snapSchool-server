@@ -104,7 +104,7 @@ async function run() {
     });
 
     // class related api
-    app.get("/class", async (req, res) => {
+    app.get("/class",verifyJWT, async (req, res) => {
       const result = await classCollection.find().toArray();
       res.send(result);
     });
@@ -120,6 +120,24 @@ async function run() {
     app.post("/class", verifyJWT, async (req, res) => {
       const newClass = req.body;
       const result = await classCollection.insertOne(newClass);
+      res.send(result);
+    });
+
+    app.put("/class/:id", async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      console.log(data);
+      const filter = { _id: new ObjectId(id) };
+
+      const updateClass = {
+        $set: {
+          name: data.name,
+          available_seat: data.available_seat,
+          price: data.price,
+        },
+      };
+      const options = { upsert: true };
+      const result = await toyCollection.updateOne(filter, updateClass, options);
       res.send(result);
     });
 
