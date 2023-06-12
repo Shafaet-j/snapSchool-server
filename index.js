@@ -21,16 +21,19 @@ const verifyJWT = (req, res, next) => {
 
   jwt.verify(token, process.env.ACCES_TOKEN_SECRET, (err, decoded) => {
     if (err) {
-      return res
-        .status(401)
-        .send({ error: true, message: "unauthorization access" });
+      return res.status(403).send({ error: true, message: "forbidden access" });
     }
     req.decoded = decoded;
     next();
   });
 };
 
-const { MongoClient, ServerApiVersion, ObjectId, Transaction } = require("mongodb");
+const {
+  MongoClient,
+  ServerApiVersion,
+  ObjectId,
+  Transaction,
+} = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fluahev.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -45,7 +48,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const userCollection = client.db("snapschool").collection("user");
     const classCollection = client.db("snapschool").collection("classes");
@@ -66,6 +69,15 @@ async function run() {
       res.send(result);
     });
 
+    // get payment by courseId ****
+    app.get("/payments/:id", async (req, res) => {
+      const id = req.query;
+      console.log(id);
+      const filter = { "payment.courseId": id };
+      const result = await paymentCollection.find(filter).toArray();
+      res.send(result);
+    });
+
     // enroll related api
 
     app.post("/enroll", async (req, res) => {
@@ -76,7 +88,7 @@ async function run() {
 
     app.get("/enroll/:email", async (req, res) => {
       const email = req.params.email;
-      
+
       const query = { email: email };
       const result = await enrollCollection.find(query).toArray();
       res.send(result);
@@ -104,14 +116,13 @@ async function run() {
     });
 
     // class related api
-    app.get("/class",verifyJWT, async (req, res) => {
+    app.get("/class", async (req, res) => {
       const result = await classCollection.find().toArray();
       res.send(result);
     });
 
     app.get("/class/:email", async (req, res) => {
       const email = req.params.email;
-      console.log(email);
       const filter = { instructor_email: email };
       const result = await classCollection.find(filter).toArray();
       res.send(result);
@@ -126,8 +137,6 @@ async function run() {
     app.put("/class/:id", async (req, res) => {
       const id = req.params.id;
       const data = req.body;
-      console.log(data);
-      const filter = { _id: new ObjectId(id) };
 
       const updateClass = {
         $set: {
@@ -136,8 +145,70 @@ async function run() {
           price: data.price,
         },
       };
+      const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
-      const result = await toyCollection.updateOne(filter, updateClass, options);
+
+      const result = await classCollection.updateOne(
+        filter,
+        updateClass,
+        options
+      );
+      res.send(result);
+    });
+
+    // app.put("/courseEnrolled", async (req, res) => {
+    //   const id = req.query.id;
+    //   const filter = { _id: new ObjectId(id) };
+    //   const course = await classCollection.findOne(filter);
+    //   console.log(course);
+    //   const updateCourseEnrolled = {
+    //     $set: {
+    //       total_enrolled: course.total_enrolled++,
+    //     },
+    //   };
+    //   const options = { upsert: true };
+    //   const result = await classCollection.updateOne(
+    //     filter,
+    //     updateCourseEnrolled,
+    //     options
+    //   );
+    //   res.send(result);
+    // });
+
+    app.put("/class/status/:id", async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateStatus = {
+        $set: {
+          status: data.status,
+        },
+      };
+      const options = { upsert: true };
+      const result = await classCollection.updateOne(
+        filter,
+        updateStatus,
+        options
+      );
+      res.send(result);
+    });
+
+    // class feedback related api
+    app.put("/class/feedback/:id", async (req, res) => {
+      const id = req.params.id;
+      const data = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateFeedback = {
+        $set: {
+          feedback: data.feedback,
+        },
+      };
+      const options = { upsert: true };
+      const result = await classCollection.updateOne(
+        filter,
+        updateFeedback,
+        options
+      );
       res.send(result);
     });
 
@@ -145,7 +216,7 @@ async function run() {
     app.post("/jwt", (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCES_TOKEN_SECRET, {
-        expiresIn: "1hr",
+        expiresIn: "6hr",
       });
       res.send({ token });
     });
@@ -278,4 +349,3 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`snapschool is running on port ${port}`);
 });
-
